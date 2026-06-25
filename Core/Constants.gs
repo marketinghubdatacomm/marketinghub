@@ -47,4 +47,3 @@ const APPROVAL_STATUS = {
 const APPROVAL_TYPE = {
   EXIT_FUNNEL: 'EXIT_FUNNEL'
 };
-//wisnu
