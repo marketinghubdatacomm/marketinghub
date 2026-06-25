@@ -17,6 +17,20 @@ function seedInitialData() {
       appendSheetRow(SHEETS.MASTER_ROLE, [createId('ROL'), role[0], role[1]]);
     }
   });
+
+  const userRows = readSheetRows(SHEETS.MASTER_USER) || [];
+  if (userRows.length === 0) {
+    appendSheetRow(SHEETS.MASTER_USER, [
+      createId('USR'),
+      'Administrator',
+      'admin@marketinghub.com',
+      hashPassword('Admin123!'),
+      'Owner',
+      'Active',
+      nowIso(),
+      ''
+    ]);
+  }
 }
 
 function seedDemoLeads() {

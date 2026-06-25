@@ -1,5 +1,5 @@
 function doGet(e) {
-  return HtmlService.createTemplateFromFile('UI/MainLayout').evaluate().setTitle('Marketing Hub');
+  return HtmlService.createTemplateFromFile('UI/Login').evaluate().setTitle('Marketing Hub Login');
 }
 
 function include(filename) {

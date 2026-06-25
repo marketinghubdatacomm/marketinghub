@@ -12,9 +12,9 @@ function getSheet(name) {
 }
 
 function showApp() {
-  const html = HtmlService.createTemplateFromFile('UI/MainLayout')
+  const html = HtmlService.createTemplateFromFile('UI/Login')
     .evaluate()
-    .setTitle('Marketing Hub');
+    .setTitle('Marketing Hub Login');
   SpreadsheetApp.getUi().showSidebar(html);
 }
 
@@ -24,7 +24,7 @@ function include(filename) {
 
 function initializeSheets() {
   const definitions = [
-    { name: SHEETS.MASTER_USER, headers: ['user_id', 'full_name', 'email', 'role_id', 'status', 'created_at', 'is_deleted'] },
+    { name: SHEETS.MASTER_USER, headers: ['user_id', 'full_name', 'email', 'password_hash', 'role_id', 'status', 'created_at', 'is_deleted'] },
     { name: SHEETS.MASTER_ROLE, headers: ['role_id', 'role_name', 'description'] },
     { name: SHEETS.MASTER_COMPANY, headers: ['company_id', 'company_name', 'industry', 'company_size', 'website', 'city', 'country', 'notes', 'created_by', 'created_at', 'is_deleted'] },
     { name: SHEETS.MASTER_CONTACT, headers: ['contact_id', 'company_id', 'full_name', 'email', 'phone', 'job_title', 'seniority_level', 'linkedin_url', 'notes', 'created_at', 'is_deleted'] },
@@ -57,6 +57,34 @@ function setupApp() {
   return { success: true, message: 'Setup complete', rolesSeeded: roleRows.length === 0, demoLeadsSeeded: leadRows.length === 0 };
 }
 
+function reinitializeMasterUserSheet() {
+  const sheet = getSheet(SHEETS.MASTER_USER);
+  if (!sheet) {
+    throw new Error('Sheet Master_User tidak ditemukan. Pastikan sheet sudah ada.');
+  }
+
+  const targetHeaders = ['user_id', 'full_name', 'email', 'password_hash', 'role_id', 'status', 'created_at', 'is_deleted'];
+  const data = sheet.getDataRange().getValues();
+  const currentHeaders = data[0] || [];
+  if (arraysEqual(currentHeaders, targetHeaders)) {
+    return { success: true, message: 'Master_User sudah terinisialisasi.' };
+  }
+
+  const rows = data.slice(1);
+  const normalizedRows = rows.map(row => {
+    const rowObj = mapRow(currentHeaders, row);
+    return targetHeaders.map(header => rowObj[header] !== undefined ? rowObj[header] : '');
+  });
+
+  sheet.clearContents();
+  sheet.getRange(1, 1, 1, targetHeaders.length).setValues([targetHeaders]);
+  if (normalizedRows.length > 0) {
+    sheet.getRange(2, 1, normalizedRows.length, targetHeaders.length).setValues(normalizedRows);
+  }
+
+  return { success: true, message: 'Master_User berhasil direinitialize dengan password_hash.' };
+}
+
 function ensureSheet(name, headers) {
   let sheet = getSpreadsheet().getSheetByName(name);
   if (!sheet) {
@@ -64,10 +92,27 @@ function ensureSheet(name, headers) {
   }
   const lastColumn = sheet.getLastColumn();
   const existingHeaders = lastColumn > 0 ? sheet.getRange(1, 1, 1, lastColumn).getValues()[0] || [] : [];
-  if (!arraysEqual(existingHeaders, headers)) {
+  if (arraysEqual(existingHeaders, headers)) {
+    return;
+  }
+
+  if (existingHeaders.length === 0) {
     sheet.clearContents();
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    return;
   }
+
+  const mergedHeaders = existingHeaders.slice();
+  headers.forEach(header => {
+    if (!mergedHeaders.includes(header)) {
+      mergedHeaders.push(header);
+    }
+  });
+
+  if (mergedHeaders.length > lastColumn) {
+    sheet.insertColumnsAfter(lastColumn, mergedHeaders.length - lastColumn);
+  }
+  sheet.getRange(1, 1, 1, mergedHeaders.length).setValues([mergedHeaders]);
 }
 
 function arraysEqual(a, b) {
